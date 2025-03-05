@@ -1,3 +1,5 @@
+![](capture.png)
+
 # installation
 
 `npm install`
