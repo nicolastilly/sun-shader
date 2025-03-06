@@ -1,21 +1,62 @@
 /* App.css */
-html, body, #root, .App {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background-color: black;
+html,
+body,
+#root,
+.App {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: black;
+    touch-action: none;
+    /* Empêche les actions tactiles par défaut comme le pinch zoom */
+    -webkit-touch-callout: none;
+    /* Désactive le menu contextuel sur iOS */
+    -webkit-user-select: none;
+    /* Désactive la sélection sur Safari */
+    -khtml-user-select: none;
+    /* Anciens navigateurs */
+    -moz-user-select: none;
+    /* Firefox */
+    -ms-user-select: none;
+    /* Internet Explorer/Edge */
+    user-select: none;
+    /* Non-prefixed version */
 }
 
 .App {
-  position: relative;
-  cursor: none; /* Cache le curseur standard */
+    position: relative;
+    cursor: none;
+    /* Cache le curseur standard sur desktop */
 }
 
 canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+    /* Important pour la compatibilité tactile */
 }
 
+/* Curseur personnalisé */
+.custom-cursor {
+    position: fixed;
+    width: 6px;
+    height: 6px;
+    background-color: black;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    /* Le curseur ne doit pas interférer avec les événements */
+    z-index: 9999;
+    mix-blend-mode: difference;
+    /* Pour qu'il reste visible sur les fonds clairs et sombres */
+}
+
+/* Masquer le curseur personnalisé sur les appareils tactiles */
+@media (pointer: coarse) {
+    .custom-cursor {
+        display: none;
+    }
+}

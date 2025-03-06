@@ -67,10 +67,10 @@ const SunMaterial = shaderMaterial(
         float aspectRatio = u_resolution.x / u_resolution.y;
         mouseUv.x *= aspectRatio;
         
-        // Réduire la taille de l'effet et rendre le cercle plus prononcé
-        float mouseDist = length(mouseUv) * 0.5; // Multiplier pour réduire la taille
+        // Ajuster la taille de l'effet selon la valeur demandée
+        float mouseDist = length(mouseUv) * 0.5; // Valeur ajustée selon votre préférence
         
-        // Mouse interaction: zone d'influence plus petite et plus prononcée
+        // Mouse interaction: zone d'influence avec la taille souhaitée
         sun += smoothstep(0.1, 0.2, 0.3 - mouseDist);
         
         gl_FragColor = vec4(vec3(sun), 1.0);
@@ -84,7 +84,7 @@ extend({ SunMaterial });
 // Composant pour adapter le shader à l'écran
 function FullScreenQuad() {
   const { viewport } = useThree();
-  
+
   return (
     <mesh scale={[viewport.width, viewport.height, 1]}>
       <planeGeometry args={[1, 1]} />
@@ -98,49 +98,127 @@ function SunShaderMaterial() {
   const materialRef = useRef();
   const { size } = useThree();
   const [mousePosition, setMousePosition] = useState([0.5, 0.5]);
-  
+
   // Mise à jour du temps dans le shader
   useFrame((state) => {
     if (materialRef.current) {
       materialRef.current.uniforms.u_time.value = state.clock.getElapsedTime();
     }
   });
-  
+
   // Mise à jour de la résolution lors du changement de taille
   useEffect(() => {
     if (materialRef.current) {
       materialRef.current.uniforms.u_resolution.value.set(size.width, size.height);
     }
   }, [size]);
-  
-  // Gestion des événements de souris
+
+  // Fonction pour normaliser la position (souris ou tactile)
+  const updatePosition = (clientX, clientY) => {
+    const x = clientX / window.innerWidth;
+    const y = 1 - clientY / window.innerHeight; // Inverser Y pour correspondre aux coordonnées GLSL
+    setMousePosition([x, y]);
+  };
+
+  // Gestion des événements de souris et tactiles
   useEffect(() => {
+    // Gestionnaire d'événements de souris
     const handleMouseMove = (e) => {
-      const x = e.clientX / window.innerWidth;
-      const y = 1 - e.clientY / window.innerHeight; // Inverser Y pour correspondre aux coordonnées GLSL
-      setMousePosition([x, y]);
+      updatePosition(e.clientX, e.clientY);
     };
-    
+
+    // Gestionnaire d'événements tactiles
+    const handleTouchMove = (e) => {
+      // Prévenir le défilement et les autres comportements par défaut
+      e.preventDefault();
+
+      // Utiliser le premier point de contact
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        updatePosition(touch.clientX, touch.clientY);
+      }
+    };
+
+    // Ajouter les écouteurs d'événements
     window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+
+    // Support tactile pour le démarrage d'un toucher
+    window.addEventListener('touchstart', handleTouchMove, { passive: false });
+
+    // Nettoyage
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchstart', handleTouchMove);
     };
   }, []);
-  
+
   // Mise à jour de la position de la souris dans le shader
   useEffect(() => {
     if (materialRef.current) {
       materialRef.current.uniforms.u_mouse.value.set(mousePosition[0], mousePosition[1]);
     }
   }, [mousePosition]);
-  
+
   return <sunMaterial ref={materialRef} />;
 }
 
 // Composant de l'application
 function App() {
+  const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
+
+  // Suivre la position du curseur pour le curseur personnalisé
+  useEffect(() => {
+    const updateCursorPosition = (clientX, clientY) => {
+      setCursorPosition({ x: clientX, y: clientY });
+    };
+
+    const handleMouseMove = (e) => {
+      updateCursorPosition(e.clientX, e.clientY);
+    };
+
+    const handleTouchMove = (e) => {
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        updateCursorPosition(touch.clientX, touch.clientY);
+      }
+    };
+
+    // Ajouter les écouteurs d'événements
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('touchstart', handleTouchMove);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchstart', handleTouchMove);
+    };
+  }, []);
+
+  // Détecter si l'appareil est tactile
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+  useEffect(() => {
+    // Vérifier si l'appareil supporte le tactile
+    const checkTouchDevice = () => {
+      setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    };
+
+    checkTouchDevice();
+  }, []);
+
   return (
     <div className="App">
+      {/* Curseur personnalisé (uniquement affiché sur les appareils non tactiles) */}
+      {!isTouchDevice && (
+        <div
+          className="custom-cursor"
+          style={{ left: `${cursorPosition.x}px`, top: `${cursorPosition.y}px` }}
+        />
+      )}
+
       <Canvas>
         {/* Utiliser une caméra orthographique pour un affichage 2D parfait */}
         <OrthographicCamera makeDefault position={[0, 0, 5]} />
