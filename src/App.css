@@ -55,11 +55,12 @@ html, body, #root, .App {
   
   @keyframes fadeOut {
     from { opacity: 1; }
+    90% { opacity: 1; } /* Reste visible pendant 90% de l'animation */
     to { opacity: 0; }
   }
   
   /* Animation pour le split-text */
   .split-text-container {
-    animation: fadeOut 1s ease forwards;
-    animation-delay: 6s; /* Commence à disparaître après 6 secondes */
+    animation: fadeOut 20s ease forwards;
+    animation-delay: 15s; /* Commence à disparaître après 6 secondes */
   }

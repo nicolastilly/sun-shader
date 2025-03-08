@@ -195,7 +195,7 @@ function App() {
     // Masquer l'intro après un certain délai
     const timer = setTimeout(() => {
       setShowIntro(false);
-    }, 7000); // Masquer après 7 secondes (ajuster selon la durée souhaitée)
+    }, 20000); // Masquer après 7 secondes (ajuster selon la durée souhaitée)
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
