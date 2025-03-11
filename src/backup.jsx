@@ -1,9 +1,10 @@
 // App.jsx
 import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree, extend } from '@react-three/fiber';
-import { shaderMaterial, OrthographicCamera } from '@react-three/drei';
+import { shaderMaterial, OrthographicCamera, Sparkles, Float, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import './App.css';
+import SplitTextAnimation from './SplitTextAnimation';
 
 // Définition du matériau de shader
 const SunMaterial = shaderMaterial(
@@ -167,6 +168,7 @@ function SunShaderMaterial() {
 // Composant de l'application
 function App() {
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
+  const [showIntro, setShowIntro] = useState(true);
 
   // Suivre la position du curseur pour le curseur personnalisé
   useEffect(() => {
@@ -190,10 +192,16 @@ function App() {
     window.addEventListener('touchmove', handleTouchMove);
     window.addEventListener('touchstart', handleTouchMove);
 
+    // Masquer l'intro après un certain délai
+    const timer = setTimeout(() => {
+      setShowIntro(false);
+    }, 20000); // Masquer après 7 secondes (ajuster selon la durée souhaitée)
+
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchstart', handleTouchMove);
+      clearTimeout(timer);
     };
   }, []);
 
@@ -211,6 +219,11 @@ function App() {
 
   return (
     <div className="App">
+      {/* Animation de texte d'introduction */}
+      {showIntro && (
+        <SplitTextAnimation text="A black sun in a sunny day" />
+      )}
+
       {/* Curseur personnalisé (uniquement affiché sur les appareils non tactiles) */}
       {!isTouchDevice && (
         <div
@@ -221,8 +234,13 @@ function App() {
 
       <Canvas>
         {/* Utiliser une caméra orthographique pour un affichage 2D parfait */}
+
         <OrthographicCamera makeDefault position={[0, 0, 5]} />
+        <Float speed={0.3} floatIntensity={0.1}>
+        <Sparkles count={200} scale={200} size={6} speed={0.5} color="#F8F2DE" />
+        </Float>
         <FullScreenQuad />
+        
       </Canvas>
     </div>
   );

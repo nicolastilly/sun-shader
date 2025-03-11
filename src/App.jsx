@@ -1,7 +1,7 @@
 // App.jsx
 import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree, extend } from '@react-three/fiber';
-import { shaderMaterial, OrthographicCamera } from '@react-three/drei';
+import { shaderMaterial, OrthographicCamera, Sparkles, Float, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import './App.css';
 import SplitTextAnimation from './SplitTextAnimation';
@@ -79,13 +79,13 @@ const SunMaterial = shaderMaterial(
   `
 );
 
-// Enregistrement du matériau personnalisé pour pouvoir l'utiliser dans JSX
+// Enregistrement du matériau personnalisé
 extend({ SunMaterial });
 
-// Composant pour adapter le shader à l'écran
-function FullScreenQuad() {
+// Composant pour le shader du soleil (ne bouge pas avec OrbitControls)
+function BackgroundScene() {
   const { viewport } = useThree();
-
+  
   return (
     <mesh scale={[viewport.width, viewport.height, 1]}>
       <planeGeometry args={[1, 1]} />
@@ -123,31 +123,22 @@ function SunShaderMaterial() {
 
   // Gestion des événements de souris et tactiles
   useEffect(() => {
-    // Gestionnaire d'événements de souris
     const handleMouseMove = (e) => {
       updatePosition(e.clientX, e.clientY);
     };
 
-    // Gestionnaire d'événements tactiles
     const handleTouchMove = (e) => {
-      // Prévenir le défilement et les autres comportements par défaut
       e.preventDefault();
-
-      // Utiliser le premier point de contact
       if (e.touches.length > 0) {
         const touch = e.touches[0];
         updatePosition(touch.clientX, touch.clientY);
       }
     };
 
-    // Ajouter les écouteurs d'événements
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('touchmove', handleTouchMove, { passive: false });
-
-    // Support tactile pour le démarrage d'un toucher
     window.addEventListener('touchstart', handleTouchMove, { passive: false });
 
-    // Nettoyage
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('touchmove', handleTouchMove);
@@ -165,12 +156,25 @@ function SunShaderMaterial() {
   return <sunMaterial ref={materialRef} />;
 }
 
+// Composant pour les Sparkles (avec OrbitControls)
+function SparklesScene() {
+  return (
+    <>
+      <OrbitControls enableZoom={true} enablePan={true} />
+      <Float speed={0.3} floatIntensity={0.1}>
+        <Sparkles count={200} scale={300} size={6} speed={0.5} color="#F8F2DE" />
+      </Float>
+    </>
+  );
+}
+
 // Composant de l'application
 function App() {
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const [showIntro, setShowIntro] = useState(true);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
 
-  // Suivre la position du curseur pour le curseur personnalisé
+  // Suivre la position du curseur et gérer l'intro
   useEffect(() => {
     const updateCursorPosition = (clientX, clientY) => {
       setCursorPosition({ x: clientX, y: clientY });
@@ -187,15 +191,15 @@ function App() {
       }
     };
 
-    // Ajouter les écouteurs d'événements
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('touchmove', handleTouchMove);
     window.addEventListener('touchstart', handleTouchMove);
 
-    // Masquer l'intro après un certain délai
     const timer = setTimeout(() => {
       setShowIntro(false);
-    }, 20000); // Masquer après 7 secondes (ajuster selon la durée souhaitée)
+    }, 20000);
+
+    checkTouchDevice();
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
@@ -205,17 +209,10 @@ function App() {
     };
   }, []);
 
-  // Détecter si l'appareil est tactile
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
-
-  useEffect(() => {
-    // Vérifier si l'appareil supporte le tactile
-    const checkTouchDevice = () => {
-      setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
-    };
-
-    checkTouchDevice();
-  }, []);
+  // Vérifier si l'appareil supporte le tactile
+  const checkTouchDevice = () => {
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  };
 
   return (
     <div className="App">
@@ -232,10 +229,16 @@ function App() {
         />
       )}
 
-      <Canvas>
-        {/* Utiliser une caméra orthographique pour un affichage 2D parfait */}
+      {/* Première Canvas pour le fond fixe (shader) */}
+      <Canvas style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1 }}>
         <OrthographicCamera makeDefault position={[0, 0, 5]} />
-        <FullScreenQuad />
+        <BackgroundScene />
+      </Canvas>
+
+      {/* Deuxième Canvas pour les Sparkles contrôlables avec OrbitControls */}
+      <Canvas style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 2, pointerEvents: 'auto', background: 'transparent' }}>
+        <OrthographicCamera makeDefault position={[0, 0, 5]} />
+        <SparklesScene />
       </Canvas>
     </div>
   );
